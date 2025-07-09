@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>质量数据看板 - 2024年6月</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #1e3a3a 0%, #2d5555 50%, #1a4d4d 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            color: #fff;
+        }
+        
+        .header .subtitle {
+            font-size: 1.2rem;
+            font-weight: 300;
+            color: #a0d4d4;
+            opacity: 0.9;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #4dd0e1;
+        }
+        
+        .metric-label {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .chart-canvas {
+            position: relative;
+            height: 300px;
+        }
+        
+        .bug-stats-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .quality-metrics-section {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #4dd0e1;
+            border-bottom: 2px solid #4dd0e1;
+            padding-bottom: 10px;
+        }
+        
+        .section-subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            color: #a0d4d4;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+        
+        .rankings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .rankings-grid-p12 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .rankings-grid-p34 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .ranking-card {
+            background: linear-gradient(135deg, rgba(77, 208, 225, 0.1), rgba(160, 212, 212, 0.1));
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            border: 1px solid rgba(77, 208, 225, 0.3);
+        }
+        
+        .ranking-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #4dd0e1;
+        }
+        
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+        
+        .ranking-position {
+            font-size: 1rem;
+            font-weight: 700;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        
+        .position-1 { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .position-2 { background: linear-gradient(135deg, #26a69a, #00695c); }
+        .position-3 { background: linear-gradient(135deg, #42a5f5, #1565c0); }
+        .position-other { background: linear-gradient(135deg, #66bb6a, #2e7d32); }
+        
+        .ranking-name {
+            flex: 1;
+            margin-left: 12px;
+            font-weight: 500;
+            color: #fff;
+        }
+        
+        .ranking-value {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #4dd0e1;
+        }
+        
+        .analysis-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .analysis-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #4dd0e1;
+        }
+        
+        .analysis-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .analysis-item {
+            background: linear-gradient(135deg, rgba(77, 208, 225, 0.1), rgba(160, 212, 212, 0.05));
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #4dd0e1;
+        }
+        
+        .analysis-item h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #4dd0e1;
+        }
+        
+        .analysis-item p {
+            line-height: 1.6;
+            font-size: 0.95rem;
+            color: #a0d4d4;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .rankings-grid-p12, .rankings-grid-p34 {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .metric-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>📊 质量数据看板</h1>
+            <p class="subtitle">2024年6月数据统计与分析</p>
+        </div>
+        
+        <!-- 核心指标 -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">221</div>
+                <div class="metric-label"><strong>总Bug数</strong></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">0.940</div>
+                <div class="metric-label"><strong>千行代码缺陷率</strong></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">7.57%</div>
+                <div class="metric-label"><strong>总单元测试覆盖率</strong></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">开发人员</div>
+                <div class="metric-label"><strong>统计范围</strong></div>
+            </div>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <div class="chart-title">Bug等级分布</div>
+                <div class="chart-canvas">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Bug数（最多）排名</div>
+                <div class="chart-canvas">
+                    <canvas id="teamBugChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bug统计区域 -->
+        <div class="bug-stats-section">
+            <div class="section-title">P1-P4 Bug Producer统计</div>
+            <div class="section-subtitle">Bug等级数据来源Jira，后续我们会完善Bug的等级标准</div>
+            
+            <!-- P1和P2排版 -->
+            <div class="rankings-grid-p12">
+                <div class="ranking-card">
+                    <div class="ranking-title">P1</div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">Joe Hou</div>
+                        <div class="ranking-value">2个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-2">2</div>
+                        <div class="ranking-name">Hershey Yu</div>
+                        <div class="ranking-value">1个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-2">2</div>
+                        <div class="ranking-name">Otis Li</div>
+                        <div class="ranking-value">1个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-2">2</div>
+                        <div class="ranking-name">Jacker Xie</div>
+                        <div class="ranking-value">1个</div>
+                    </div>
+                </div>
+                
+                <div class="ranking-card">
+                    <div class="ranking-title">P2</div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">Klay Pi</div>
+                        <div class="ranking-value">2个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">Ethan Luo</div>
+                        <div class="ranking-value">2个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">Otis Li</div>
+                        <div class="ranking-value">2个</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- P3和P4排版 -->
+            <div class="rankings-grid-p34">
+                <div class="ranking-card">
+                    <div class="ranking-title">P3</div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">Kam Zeng</div>
+                        <div class="ranking-value">6个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">Bruce Zhang</div>
+                        <div class="ranking-value">6个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-3">3</div>
+                        <div class="ranking-name">Eric Wang</div>
+                        <div class="ranking-value">5个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-3">3</div>
+                        <div class="ranking-name">Xinyu Zhao</div>
+                        <div class="ranking-value">5个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-3">3</div>
+                        <div class="ranking-name">Fan Wu</div>
+                        <div class="ranking-value">5个</div>
+                    </div>
+                </div>
+                
+                <div class="ranking-card">
+                    <div class="ranking-title">P4</div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">Katherine Tan</div>
+                        <div class="ranking-value">10个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-2">2</div>
+                        <div class="ranking-name">August Li</div>
+                        <div class="ranking-value">8个</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-2">2</div>
+                        <div class="ranking-name">Xinyu Zhao</div>
+                        <div class="ranking-value">8个</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 质量指标区域 -->
+        <div class="quality-metrics-section">
+            <div class="section-title">📈 质量指标</div>
+            <div class="rankings-grid">
+                <div class="ranking-card">
+                    <div class="ranking-title">🔬 单元测试覆盖率 Top 3</div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">DAL Team</div>
+                        <div class="ranking-value">60.5%</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-2">2</div>
+                        <div class="ranking-name">API Team</div>
+                        <div class="ranking-value">19.0%</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-3">3</div>
+                        <div class="ranking-name">Data Team</div>
+                        <div class="ranking-value">18.1%</div>
+                    </div>
+                </div>
+                
+                <div class="ranking-card">
+                    <div class="ranking-title">🎖️ 千行代码缺陷率——最少缺陷</div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-1">1</div>
+                        <div class="ranking-name">Platform Team</div>
+                        <div class="ranking-value">0.264</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-2">2</div>
+                        <div class="ranking-name">API Team</div>
+                        <div class="ranking-value">0.480</div>
+                    </div>
+                    <div class="ranking-item">
+                        <div class="ranking-position position-3">3</div>
+                        <div class="ranking-name">Data Team</div>
+                        <div class="ranking-value">0.635</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分析总结 -->
+        <div class="analysis-section">
+            <div class="analysis-title">📋 关键洞察与建议</div>
+            <div class="analysis-content">
+                <div class="analysis-item">
+                    <h4>Bug等级分布</h4>
+                    <p>P3和P4等级Bug占比88.2%，主要为功能性问题。P1 Bug虽少但影响严重，需重点关注。</p>
+                </div>
+                <div class="analysis-item">
+                    <h4>团队表现</h4>
+                    <p>Platform Team缺陷率最低，质量控制优秀。Frontend Team Bug数最多但代码变更量大，需加强代码审查。</p>
+                </div>
+                <div class="analysis-item">
+                    <h4>测试覆盖</h4>
+                    <p>DAL Team单测覆盖率最高(60.5%)，但整体覆盖率偏低。建议各团队制定覆盖率提升计划。</p>
+                </div>
+                <div class="analysis-item">
+                    <h4>改进建议</h4>
+                    <p>1. 加强P1/P2高优先级Bug预防<br>2. 提升单元测试覆盖率至60%+<br>3. 优化代码审查流程<br>4. 定期质量培训和经验分享</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        Chart.register(ChartDataLabels);
+        
+        // Bug等级分布条形图
+        const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+        new Chart(priorityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['P1 (严重)', 'P2 (高)', 'P3 (中)', 'P4 (低)'],
+                datasets: [{
+                    label: 'Bug数量',
+                    data: [5, 21, 109, 86],
+                    backgroundColor: [
+                        'rgba(255, 152, 0, 0.8)',
+                        'rgba(38, 166, 154, 0.8)',
+                        'rgba(66, 165, 245, 0.8)',
+                        'rgba(102, 187, 106, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 152, 0, 1)',
+                        'rgba(38, 166, 154, 1)',
+                        'rgba(66, 165, 245, 1)',
+                        'rgba(102, 187, 106, 1)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold'
+                        },
+                        formatter: (value) => value
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)'
+                        },
+                        ticks: {
+                            color: '#fff'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#fff'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 团队Bug数排名条形图
+        const teamBugCtx = document.getElementById('teamBugChart').getContext('2d');
+        new Chart(teamBugCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Frontend Team', 'API Team', 'Origination Team'],
+                datasets: [{
+                    label: 'Bug数量',
+                    data: [92, 53, 17],
+                    backgroundColor: [
+                        'rgba(255, 152, 0, 0.8)',
+                        'rgba(38, 166, 154, 0.8)',
+                        'rgba(66, 165, 245, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 152, 0, 1)',
+                        'rgba(38, 166, 154, 1)',
+                        'rgba(66, 165, 245, 1)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold'
+                        },
+                        formatter: (value) => value
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)'
+                        },
+                        ticks: {
+                            color: '#fff'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#fff'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
